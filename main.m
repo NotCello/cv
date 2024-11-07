@@ -80,6 +80,10 @@ img{4}=imread('ur_c_s_03a_01_L_0379.png');
 img{5}=imread('ur_c_s_03a_01_L_0380.png');
 img{6}=imread('ur_c_s_03a_01_L_0381.png');
 
+%Il ciclo for permette di visualizzare separatamente i canali delle 
+% componenti % RGB (rosso, verde, blu) e HSV (tonalità, 
+% saturazione, valore)  per ciascuna immagine:
+
 for i=1:6
     figure;
     subplot(1,3,1),imshow(img{i}(:,:,1)),title('Red');
@@ -101,6 +105,11 @@ end
 %Select in the image “ur_c_s_03a_01_L_0376.png” the area corresponding to the 
 %dark car that turns on the left, e.g. area [390:400,575:595]. In this area compute 
 %the mean value (m) and the standard deviation (s) of the Hue component
+
+%In questa sezione, il codice seleziona un'area specifica 
+% dell'immagine per calcolare la media e la deviazione standard 
+% della componente Hue:
+
 figure,imshow(img_selected_hsv)
 img_selected_hsv_1comp = img_selected_hsv(390:400,575:595,1);
 m = mean(img_selected_hsv_1comp(:))
@@ -108,7 +117,9 @@ s = std(img_selected_hsv_1comp(:))
 
 %Segment the dark car in the 6 images by thresholding the Hue component (e.g. in 
 %the range between m-s and m+s)
-
+%La segmentazione viene eseguita sulla componente 
+% Hue utilizzando la media e la deviazione standard 
+% calcolate sopra:
 %simple segmentation
 img_hsv = img_selected_hsv;
 [rr,cc,pp]=size(img_hsv);
@@ -123,6 +134,10 @@ figure,imagesc(seg),colormap gray, title('segmented object (blob)') %binary imag
 %bounding box of the blob with the highest area; see Fig.1).
 
 %close all
+
+%Infine, il codice trova il centroide e il bounding 
+% box dell'oggetto segmentato, utilizzando la funzione 
+% regionprops():
 
 prop=regionprops(mask, 'Area','Centroid','BoundingBox');
 xc=floor(prop(1).Centroid(1));
