@@ -122,7 +122,7 @@ figure,imagesc(seg),colormap gray, title('segmented object (blob)') %binary imag
 %color image (tips: regionprops() function needs a logical matrix; display the 
 %bounding box of the blob with the highest area; see Fig.1).
 
-close all
+%close all
 
 prop=regionprops(mask, 'Area','Centroid','BoundingBox');
 xc=floor(prop(1).Centroid(1));
