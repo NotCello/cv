@@ -3,7 +3,7 @@ addpath('images\');
 % Load the reference image and convert to grayscale if necessary The size(refImage, 3) checks if the image has three channels 
 % (color image). If it does, rgb2gray(refImage) converts it to grayscale, which is needed for processing with normxcorr2, 
 % as this function expects 2D matrices.
-refImage = imread('ur_c_s_03a_01_L_0376.png');
+refImage = imread('ur_c_s_03a_01_L_0376.png'); 
 if size(refImage, 3) == 3
     refImage = rgb2gray(refImage);
 end
@@ -99,3 +99,54 @@ for i = 1:length(imageFiles)
     title(['Dark Car Location in Image ', num2str(i)]);
     hold off;
 end
+%% point 2
+% Load and convert the image to grayscale if necessary
+image = imread('i235.png');
+if size(image, 3) == 3
+    image = rgb2gray(image);
+end
+image = im2double(image);  % Convert to double precision for accurate calculations
+
+% Parameters for the Harris corner detector
+windowSize = 5;     % Window size for Gaussian smoothing
+sigma = 1;          % Standard deviation for Gaussian filter
+k = 0.04;           % Harris detector constant (between 0.04 and 0.06)
+
+% 1. Compute Partial Derivatives of the Image
+[Ix, Iy] = imgradientxy(image);  % Gradient in x and y directions
+figure, imshow(Ix, []), title('Partial Derivative in x-direction');
+figure, imshow(Iy, []), title('Partial Derivative in y-direction');
+
+% 2. Apply Gaussian Smoothing to the Products of Derivatives
+G = fspecial('gaussian', windowSize, sigma);  % Gaussian filter
+
+Ixx = imfilter(Ix.^2, G);
+Iyy = imfilter(Iy.^2, G);
+Ixy = imfilter(Ix .* Iy, G);
+
+% Display the Gaussian filter
+figure, imshow(G, []), title('Gaussian Filter');
+
+% 3. Compute the R Score Map (Harris Response)
+R = (Ixx .* Iyy - Ixy.^2) - k * (Ixx + Iyy).^2;
+
+% Display the R score map
+figure, imshow(R, []), title('R Score Map');
+
+% 4. Threshold the R Score Map to Find Corner Regions
+threshold = 0.3 * max(R(:));   % Threshold as 0.3 * max(R)
+cornerRegions = R > threshold; % Binary map of corner regions
+
+figure, imshow(cornerRegions, []), title('Corner Regions');
+
+% 5. Detect Corners Using Centroids of Corner Regions
+% Use regionprops to find centroids of detected corner regions
+stats = regionprops(cornerRegions, 'Centroid');
+centroids = cat(1, stats.Centroid);
+
+% 6. Display the Detected Corners Overlapped on the Original Image
+figure, imshow(image), title('Detected Corners');
+hold on;
+plot(centroids(:,1), centroids(:,2), 'r+', 'MarkerSize', 5, 'LineWidth', 1.5);
+hold off;
+
