@@ -99,54 +99,114 @@ for i = 1:length(imageFiles)
     title(['Dark Car Location in Image ', num2str(i)]);
     hold off;
 end
-%% point 2
-% Load and convert the image to grayscale if necessary
-image = imread('i235.png');
-if size(image, 3) == 3
-    image = rgb2gray(image);
+% %% point 2
+% % Load and convert the image to grayscale if necessary
+% image = imread('i235.png');
+% if size(image, 3) == 3
+%     image = rgb2gray(image);
+% end
+% image = im2double(image);  % Convert to double precision for accurate calculations
+% 
+% % Parameters for the Harris corner detector
+% windowSize = 5;     % Window size for Gaussian smoothing
+% sigma = 1;          % Standard deviation for Gaussian filter
+% k = 0.04;           % Harris detector constant (between 0.04 and 0.06)
+% 
+% % 1. Compute Partial Derivatives of the Image
+% [Ix, Iy] = imgradientxy(image);  % Gradient in x and y directions
+% figure, imshow(Ix, []), title('Partial Derivative in x-direction');
+% figure, imshow(Iy, []), title('Partial Derivative in y-direction');
+% 
+% % 2. Apply Gaussian Smoothing to the Products of Derivatives
+% G = fspecial('gaussian', windowSize, sigma);  % Gaussian filter
+% 
+% Ixx = imfilter(Ix.^2, G);
+% Iyy = imfilter(Iy.^2, G);
+% Ixy = imfilter(Ix .* Iy, G);
+% 
+% % Display the Gaussian filter
+% figure, imshow(G, []), title('Gaussian Filter');
+% 
+% % 3. Compute the R Score Map (Harris Response)
+% R = (Ixx .* Iyy - Ixy.^2) - k * (Ixx + Iyy).^2;
+% 
+% % Display the R score map
+% figure, imshow(R, []), title('R Score Map');
+% 
+% % 4. Threshold the R Score Map to Find Corner Regions
+% threshold = 0.3 * max(R(:));   % Threshold as 0.3 * max(R)
+% cornerRegions = R > threshold; % Binary map of corner regions
+% 
+% figure, imshow(cornerRegions, []), title('Corner Regions');
+% 
+% % 5. Detect Corners Using Centroids of Corner Regions
+% % Use regionprops to find centroids of detected corner regions
+% stats = regionprops(cornerRegions, 'Centroid');
+% centroids = cat(1, stats.Centroid);
+% 
+% % 6. Display the Detected Corners Overlapped on the Original Image
+% figure, imshow(image), title('Detected Corners');
+% hold on;
+% plot(centroids(:,1), centroids(:,2), 'r+', 'MarkerSize', 5, 'LineWidth', 1.5);
+% hold off;
+% 
+% Harris corner detector implementation on image i235.png
+
+% Load the image
+tmp = imread('i235.png', 'png');
+I = double(tmp);
+figure, imagesc(I), colormap gray, title('Original Image');
+
+% Compute x and y derivative of the image
+dx = [1 0 -1; 2 0 -2; 1 0 -1];
+dy = [1 2 1; 0 0 0; -1 -2 -1];
+Ix = conv2(I, dx, 'same');
+Iy = conv2(I, dy, 'same');
+figure, imagesc(Ix), colormap gray, title('Partial Derivative Ix');
+figure, imagesc(Iy), colormap gray, title('Partial Derivative Iy');
+
+% Compute products of derivatives at every pixel
+Ix2 = Ix .* Ix; 
+Iy2 = Iy .* Iy; 
+Ixy = Ix .* Iy;
+
+% Compute the sum of products of derivatives at each pixel
+g = fspecial('gaussian', 9, 1.2);
+figure, imagesc(g), colormap gray, title('Gaussian Filter');
+Sx2 = conv2(Ix2, g, 'same'); 
+Sy2 = conv2(Iy2, g, 'same'); 
+Sxy = conv2(Ixy, g, 'same');
+
+% Feature detection
+[rr, cc] = size(Sx2);
+R_map = zeros(rr, cc);
+k = 0.05;
+
+for ii = 1:rr
+    for jj = 1:cc
+        % Define at each pixel (x, y) the matrix M
+        M = [Sx2(ii, jj), Sxy(ii, jj); Sxy(ii, jj), Sy2(ii, jj)];
+        % Compute the response of the detector at each pixel
+        R = det(M) - k * (trace(M)^2);
+        R_map(ii, jj) = R;
+    end
 end
-image = im2double(image);  % Convert to double precision for accurate calculations
 
-% Parameters for the Harris corner detector
-windowSize = 5;     % Window size for Gaussian smoothing
-sigma = 1;          % Standard deviation for Gaussian filter
-k = 0.04;           % Harris detector constant (between 0.04 and 0.06)
+% Show the R score map
+figure, imagesc(R_map), colormap jet, title('R Score Map');
 
-% 1. Compute Partial Derivatives of the Image
-[Ix, Iy] = imgradientxy(image);  % Gradient in x and y directions
-figure, imshow(Ix, []), title('Partial Derivative in x-direction');
-figure, imshow(Iy, []), title('Partial Derivative in y-direction');
+% Threshold for corner regions
+M = max(R_map(:));
+corner_threshold = 0.3 * M;
+corner_reg = R_map > corner_threshold;
+figure, imagesc(corner_reg .* I), colormap gray, title('Corner Regions');
 
-% 2. Apply Gaussian Smoothing to the Products of Derivatives
-G = fspecial('gaussian', windowSize, sigma);  % Gaussian filter
-
-Ixx = imfilter(Ix.^2, G);
-Iyy = imfilter(Iy.^2, G);
-Ixy = imfilter(Ix .* Iy, G);
-
-% Display the Gaussian filter
-figure, imshow(G, []), title('Gaussian Filter');
-
-% 3. Compute the R Score Map (Harris Response)
-R = (Ixx .* Iyy - Ixy.^2) - k * (Ixx + Iyy).^2;
-
-% Display the R score map
-figure, imshow(R, []), title('R Score Map');
-
-% 4. Threshold the R Score Map to Find Corner Regions
-threshold = 0.3 * max(R(:));   % Threshold as 0.3 * max(R)
-cornerRegions = R > threshold; % Binary map of corner regions
-
-figure, imshow(cornerRegions, []), title('Corner Regions');
-
-% 5. Detect Corners Using Centroids of Corner Regions
-% Use regionprops to find centroids of detected corner regions
-stats = regionprops(cornerRegions, 'Centroid');
+% Find centroids of the corner regions using regionprops
+stats = regionprops(corner_reg, 'Centroid');
 centroids = cat(1, stats.Centroid);
 
-% 6. Display the Detected Corners Overlapped on the Original Image
-figure, imshow(image), title('Detected Corners');
+% Show the detected corners overlapped to the original image
+figure, imshow(tmp), title('Detected Corners Overlapped');
 hold on;
-plot(centroids(:,1), centroids(:,2), 'r+', 'MarkerSize', 5, 'LineWidth', 1.5);
+plot(centroids(:,1), centroids(:,2), 'r+', 'MarkerSize', 10, 'LineWidth', 2);
 hold off;
-
