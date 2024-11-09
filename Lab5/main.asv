@@ -220,20 +220,16 @@ figure, imagesc(R_map), colormap jet, title('R Score Map');
 % Threshold for corner regions
 M = max(R_map(:));
 corner_threshold = 0.3 * M; %i put the soglia at 30% of the maximum value of R
-% the pixel with a value bigger than this soglia are considered angles
-corner_reg = R_map > corner_threshold; %I create a binary map where pixel are angles
+% 
+corner_reg = R_map > corner_threshold;
 figure, imagesc(corner_reg .* I), colormap gray, title('Corner Regions');
 
 % Find centroids of the corner regions using regionprops
-stats = regionprops(corner_reg, 'Centroid'); %i find the centroidi of the blon
-centroids = cat(1, stats.Centroid);% concateno i centroidi in una matrice in cui ogni riga è un centroide
+stats = regionprops(corner_reg, 'Centroid');
+centroids = cat(1, stats.Centroid);
 
 % Show the detected corners overlapped to the original image
 figure, imshow(tmp), title('Detected Corners Overlapped');
 hold on;
 plot(centroids(:,1), centroids(:,2), 'r+', 'MarkerSize', 10, 'LineWidth', 2);
 hold off;
-
-%: Sovrappone i punti rilevati (angoli) sull'immagine originale 
-% utilizzando dei simboli rossi ('r+'). Questa visualizzazione aiuta a 
-% verificare se gli angoli sono stati rilevati correttamente.
